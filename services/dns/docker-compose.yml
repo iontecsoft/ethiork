@@ -1,0 +1,33 @@
+version: '2.1'
+
+volumes:
+  pihole:
+  dnsmasq:
+
+services:
+  pihole:
+    image: pihole/pihole
+    privileged: true
+    restart: always
+    volumes:
+      - './pihole:/etc/pihole'
+      - './dnsmasq:/etc/dnsmasq.d'
+    dns:
+      - '127.0.0.1'
+        #      - '1.1.1.1'
+    network_mode: host
+    environment:
+      - 'ServerIP=_insert_ip_'
+      - 'TZ=America/Chicago'
+      - 'WEBPASSWORD=_insert_pass_'
+      - 'DNS1=127.0.0.1#5053'
+      - 'DNS2=127.0.0.1#5053'
+      - 'INTERFACE=eth0'
+      - 'DNSMASQ_LISTENING=eth0'
+  unbound:
+    image: klutchell/unbound
+    restart: always
+    ports:
+      - '5053:53/udp'
+    volumes:
+      - './conf/:/opt/unbound/etc/unbound/'
