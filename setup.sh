@@ -15,5 +15,20 @@ apt install docker-ce docker-ce-cli containerd.io
 curl -L "https://github.com/docker/compose/releases/download/2.29.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
-# copy configuration files
+# copy configuration files from temp folder where we are running that script into /ethiork folder
+mkdir /ethiork
+mkdir /ethiork/dns
+cp -R services/dns/* /ethiork/dns/
+
+# for pihole configuration
+# get ip address of this machine and put it as server IP
+# simplest way of getting IP
+#SERVER_IP=`hostname -I | cut -d' ' -f1`
+# this way suppose to work better
+SERVER_IP=`ip route get 1 | awk '{print $(NF-2);exit}'`
+sed -i -e "s/_insert_ip_/$SERVER_IP/g" /ethiork/dns/docker-compose.yml
+# generate random password and ingest it as a password
+PASSWD=`< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;`
+sed -i -e "s/_insert_pass_/$PASSWD/g" /ethiork/dns/docker-compose.yml
+# create service that would launch on start
 # launch services
