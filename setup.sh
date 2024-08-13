@@ -12,7 +12,7 @@ apt update
 # install docker 
 apt install docker-ce docker-ce-cli containerd.io
 # install docker-compose
-curl -L "https://github.com/docker/compose/releases/download/2.29.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+curl -L "https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
 # copy configuration files from temp folder where we are running that script into /ethiork folder
@@ -32,3 +32,5 @@ PASSWD=`< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;`
 sed -i -e "s/_insert_pass_/$PASSWD/g" /ethiork/dns/docker-compose.yml
 # create service that would launch on start
 # launch services
+cd /ethiork/dns
+docker-compose up -d
