@@ -16,8 +16,7 @@ curl -L "https://github.com/docker/compose/releases/download/v2.29.1/docker-comp
 chmod +x /usr/local/bin/docker-compose
 
 # copy configuration files from temp folder where we are running that script into /ethiork folder
-mkdir /ethiork
-mkdir /ethiork/dns
+mkdir -p /ethiork/dns
 cp -R services/dns/* /ethiork/dns/
 
 # for pihole configuration
@@ -30,6 +29,12 @@ sed -i -e "s/_insert_ip_/$SERVER_IP/g" /ethiork/dns/docker-compose.yml
 # generate random password and ingest it as a password
 PASSWD=`< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;`
 sed -i -e "s/_insert_pass_/$PASSWD/g" /ethiork/dns/docker-compose.yml
+# disable local resolver which occupied port 53
+mkdir -p /etc/systemd/resolved.conf.d/
+echo -e "[Resolve]\nDNSStubListener=no" > /etc/systemd/resolved.conf.d/disable-stub.conf
+ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+systemctl restart systemd-resolved
+# copy predefined configs
 # create service that would launch on start
 # launch services
 cd /ethiork/dns
