@@ -17,9 +17,9 @@ services:
         #      - '1.1.1.1'
     network_mode: host
     environment:
-      - 'ServerIP=_insert_ip_'
+      - 'ServerIP=SERVER_IP'
       - 'TZ=America/Chicago'
-      - 'WEBPASSWORD=_insert_pass_'
+      - 'WEBPASSWORD=SERVER_PASSWORD'
       - 'DNS1=127.0.0.1#5053'
       - 'DNS2=127.0.0.1#5053'
       - 'INTERFACE=eth0'
