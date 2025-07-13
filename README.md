@@ -19,4 +19,10 @@ If you made this far you are confident that you can work things out on your own:
 
 All code that Ethiork consist of can be found in this repository and preloaded boxes contain additional automatic updates system that will be published when it's out of our internal beta.
 
+## Where to buy?
+
+Ethiork ecosystem is available in next factors:
+- ETH0 BYOD (Bring your own device) can be purchased [here](https://square.link/u/EVlmay6q)
+- ETH0 REF (Refurbished device) can be purchased [here](https://square.link/u/RCKDSSRc)
+
 <a rel="nofollow me" href="https://social.ssbx.dev/@ethiork">Ethiork's Mastodon</a>
