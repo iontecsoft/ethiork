@@ -2,9 +2,12 @@
 
 import json
 import os
+import subprocess
 
 __DEBUG_ONLY__ = False
-__ROOT__ = '/'
+__ROOT__ = "/"
+__TMP__ = "tmp"
+__HOME__ = "home"
 
 class System:
     def __init__(self):
@@ -32,6 +35,7 @@ class System:
         # download compose binary
         os.system('curl -L "https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose')
         os.system('chmod +x /usr/local/bin/docker-compose')
+        # TODO Install python libs
 
     def parse(self, settings):
         # parse all settings and depending on what each one is calling associated variable
@@ -57,6 +61,26 @@ class System:
         os.system('echo "[Resolve]\nDNSStubListener=no" > /etc/systemd/resolved.conf.d/disable-stub.conf')
         os.system('ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf')
         os.system('systemctl restart systemd-resolved')
+
+    def configure_unattended_update(self):
+        # setup unattended upgrades
+        if __DEBUG_ONLY__:
+            print("DEBUG COnfiguring upgrade")
+            return
+
+    def configure_cron(self):
+        # setup unattended upgrades
+        if __DEBUG_ONLY__:
+            print("DEBUG Configuring nightly cron")
+            return
+        source = os.path.join(__ROOT__,__TMP__,"ethiork")
+        destination = os.path.join(__ROOT__,__HOME__,"ethiork")
+        os.system(f"cp {source} {destination}")
+        os.system(f"(crontab -l 2>/dev/null; echo '@weekly  {destination}') | crontab -")
+    
+    def create_ui(self):
+        # this will launch UI for ethiork
+        return
 
 
 class Service:
@@ -90,14 +114,17 @@ class Service:
         if __DEBUG_ONLY__:
             print("DEBUG Copy remplates")
             return
-        os.system('mv services/'+service_name+' ' + self.default_folder + '/')
+        src_folder = os.path.join(__ROOT__,__TMP__,"services",service_name)
+        dst_folder = os.path.join(__ROOT__,__TMP__,"services",service_name,"")
+        os.system(f"mv {src_folder} {dst_folder}")
+
 
     def update_templates(self, service_name, service_vars):
         # update docker variables
-        if "dns" == service_name:
+        file_name = os.path.join(self.default_folder, service_name, 'docker-compose.yml') 
+        if "dns" == service_name or "ddns" == service_name:
             # updating pihole
             # open docker file
-            file_name = os.path.join(self.default_folder, service_name, 'docker-compose.yml') 
             with open(file_name, 'r') as docker_file:
                 docker_config = docker_file.read()
                 for key, value in service_vars.items():
@@ -108,11 +135,21 @@ class Service:
                 return
             with open(file_name, 'w') as docker_file:
                 docker_file.write(docker_config)
-        elif "ddns" == service_name:
-            # update ddns
-            if __DEBUG_ONLY__:
-                print("DEBUG Update ddns service")
-                return
+#        elif "ddns" == service_name:
+#            # update ddns
+#            with open(file_name, 'r') as docker_file:
+#                docker_config = docker_file.read()
+#                for key, value in service_vars.items():
+#                    # find and replase
+#                    docker_config = docker_config.replace(key,value)
+#            if __DEBUG_ONLY__:
+#                print("DEBUG Writing config")
+#                return
+#            with open(file_name, 'w') as docker_file:
+#                docker_file.write(docker_config)
+#            if __DEBUG_ONLY__:
+#                print("DEBUG Update ddns service")
+#                return
         elif "wireguard" == service_name:
             # update wireguard
             if __DEBUG_ONLY__:
@@ -124,8 +161,10 @@ class Service:
         if __DEBUG_ONLY__:
             print("DEBUG Launching service:" + service_name)
             return
-        folder_name = os.path.join(self.default_folder,service_name)
-        os.system('cd ' + folder_name + '; docker-compose up -d')
+        #folder_name = os.path.join(self.default_folder,service_name)
+        docker_config = os.path.join(self.default_folder,service_name,"docker-compose.yml")
+        os.system(f"docker-compose --file {docker_config} up -d")
+        #os.system('cd ' + folder_name + '; docker-compose up -d')
 
 
 
@@ -143,7 +182,8 @@ class Config:
         if __DEBUG_ONLY__:
             print("DEBUG Writing JSON file")
             return
-        with open(self.config_file, "w") as config:
+        config_destination = os.path.join(__ROOT__,"ethiork",self.config_file)
+        with open(config_destination, "w") as config:
             json.dump(self.config_data, config, indent=4)
 
     def generate(self):
@@ -159,6 +199,12 @@ class Config:
                 data_value = system_pipe.read().rstrip()
         elif "_insert_pass_" == data_value:
             # generating randome password
+            with os.popen('< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;') as system_pipe:
+                data_value = system_pipe.read().rstrip()
+        elif "_ddns_domain_" == data_value:
+            with os.popen('shuf -n 1 /usr/share/dict/words') as system_pipe:
+                data_value = system_pipe.read().rstrip()
+        elif "_auth_token_" == data_value:
             with os.popen('< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;') as system_pipe:
                 data_value = system_pipe.read().rstrip()
         return data_value
@@ -201,6 +247,7 @@ class Config:
         # configure system things
         server.parse(settings)
         server.configure_resolved()
+        # blocking for now server.configure_cron()
         # loop through set of services
         # and deploy each one
         services = Service(services_list)
